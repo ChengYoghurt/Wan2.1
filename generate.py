@@ -35,11 +35,33 @@ EXAMPLE_PROMPT = {
     },
 }
 
+PROMPTS = [
+    "a muffin with a burning candle and a love sign by a ceramic mug", # food
+    "a group of friend place doing hand gestures of agreement", # human
+    "aerial view of snow piles", # scenery
+    "yacht sailing through the ocean", # vehicle
+]
+
 def load_prompts_from_file(file_path):
     """Reads prompts from a text file, one per line."""
     with open(file_path, "r", encoding="utf-8") as f:
         prompts = [line.strip() for line in f.readlines() if line.strip()]
     return prompts
+
+def save_ref_video(video, i, prompt):
+    import os
+    import torch
+    # Check if `video` is already a PyTorch tensor
+    if not isinstance(video, torch.Tensor):
+        # Convert to a PyTorch tensor if it's not already one
+        video = torch.tensor(video)
+    ref_video_folder = f"assets/33x480p"
+    # Save the video tensor to a .pt file
+    os.makedirs(ref_video_folder, exist_ok=True)
+    ref_video_path = os.path.join(ref_video_folder, f"{i}.pt")
+    torch.save(video, ref_video_path)
+
+    print(f"Video saved as {ref_video_path}")
 
 def _validate_args(args):
     # Basic check
@@ -201,6 +223,12 @@ def _parse_args():
         type=str,
         default=None,
         help="Output directory to save videos.")
+    parser.add_argument(
+        "--save_ref",
+        action="store_true",
+        default=False,
+        help="Whether to save reference video ckpt.")
+    
 
     args = parser.parse_args()
 
@@ -364,7 +392,8 @@ def generate(args):
                         normalize=True,
                         value_range=(-1, 1))
         else:
-            for i, prompt in enumerate(prompts):
+            for i, prompt in enumerate(PROMPTS):
+            # for i, prompt in enumerate(prompts):
                 video = wan_t2v.generate(
                     prompt,
                     size=SIZE_CONFIGS[args.size],
@@ -388,6 +417,12 @@ def generate(args):
                         nrow=1,
                         normalize=True,
                         value_range=(-1, 1))
+
+                    if args.save_ref:
+                        logging.info(f"Video shape: {video.shape}")
+                        save_ref_video(video, i, prompt)
+                        logging.info(f"Saving ref video[{i}]...")
+
     logging.info("Finished.")
 
 
