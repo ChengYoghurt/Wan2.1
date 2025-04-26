@@ -117,6 +117,7 @@ class WanT2V:
                  guide_scale=5.0,
                  n_prompt="",
                  seed=-1,
+                 ea_timesteps=None,
                  offload_model=True):
         r"""
         Generates video frames from text prompt using diffusion process.
@@ -226,6 +227,7 @@ class WanT2V:
             arg_c = {'context': context, 'seq_len': seq_len}
             arg_null = {'context': context_null, 'seq_len': seq_len}
 
+            latest_noise_pred = None
             for _, t in enumerate(tqdm(timesteps)):
                 latent_model_input = latents
                 timestep = [t]
@@ -233,13 +235,20 @@ class WanT2V:
                 timestep = torch.stack(timestep)
 
                 self.model.to(self.device)
-                noise_pred_cond = self.model(
-                    latent_model_input, t=timestep, **arg_c)[0]
-                noise_pred_uncond = self.model(
-                    latent_model_input, t=timestep, **arg_null)[0]
+                if ea_timesteps is None or latest_noise_pred is None or t in ea_timesteps:
+                    noise_pred_cond = self.model(
+                        latent_model_input, t=timestep, **arg_c)[0]
+                    noise_pred_uncond = self.model(
+                        latent_model_input, t=timestep, **arg_null)[0]
 
-                noise_pred = noise_pred_uncond + guide_scale * (
-                    noise_pred_cond - noise_pred_uncond)
+                    noise_pred = noise_pred_uncond + guide_scale * (
+                        noise_pred_cond - noise_pred_uncond)
+                    
+                    # Cache the latest pred_noise
+                    latest_noise_pred = noise_pred
+                else:
+                    # Use the latest cached pred
+                    noise_pred = latest_noise_pred
 
                 temp_x0 = sample_scheduler.step(
                     noise_pred.unsqueeze(0),
