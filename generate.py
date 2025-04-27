@@ -402,41 +402,41 @@ def generate(args):
                 timesteps_path = "full_timesteps.yaml"
                 with open(timesteps_path, "r") as file:
                     timesteps_data = yaml.safe_load(file)
-                timesteps = timesteps_data.get("33", {})  # Returns empty dict if "2s" doesn't exist
+                timesteps = timesteps_data.get("sample50", {})  # Returns empty dict if "sample50" doesn't exist
                 timesteps_dict = timesteps.items()
-            prompts = ["yacht sailing through the ocean",]
-            # for i, prompt in enumerate(PROMPTS):
-            for i, prompt in enumerate(prompts):
-                for subnode_name, timesteps_list in timesteps_dict:
-                    video = wan_t2v.generate(
-                        prompt,
-                        size=SIZE_CONFIGS[args.size],
-                        frame_num=args.frame_num,
-                        shift=args.sample_shift,
-                        sample_solver=args.sample_solver,
-                        sampling_steps=args.sample_steps,
-                        guide_scale=args.sample_guide_scale,
-                        seed=args.base_seed,
-                        ea_timesteps=timesteps_list,
-                        offload_model=args.offload_model)
+            # == Use your own prompts here == #
+            for i, prompt in enumerate(PROMPTS):
+            # for i, prompt in enumerate(prompts):
+                #for subnode_name, timesteps_list in timesteps_dict:
+                video = wan_t2v.generate(
+                    prompt,
+                    size=SIZE_CONFIGS[args.size],
+                    frame_num=args.frame_num,
+                    shift=args.sample_shift,
+                    sample_solver=args.sample_solver,
+                    sampling_steps=args.sample_steps,
+                    guide_scale=args.sample_guide_scale,
+                    seed=args.base_seed,
+                    ea_timesteps=None, #timesteps_list,
+                    offload_model=args.offload_model)
 
-                    if rank == 0:
-                        video_filename = f"{prompt}.mp4"  # Format index as 4 digits (e.g., 0000, 0001, etc.)
-                        save_path = os.path.join(args.save_dir, video_filename)
-                            
-                        logging.info(f"Saving generated video[{i}] to {save_path}")
-                        cache_video(
-                            tensor=video[None],
-                            save_file=save_path,
-                            fps=cfg.sample_fps,
-                            nrow=1,
-                            normalize=True,
-                            value_range=(-1, 1))
+                if rank == 0:
+                    video_filename = f"{prompt}.mp4"
+                    save_path = os.path.join(args.save_dir, video_filename)
+                        
+                    logging.info(f"Saving generated video[{i}] to {save_path}")
+                    cache_video(
+                        tensor=video[None],
+                        save_file=save_path,
+                        fps=cfg.sample_fps,
+                        nrow=1,
+                        normalize=True,
+                        value_range=(-1, 1))
 
-                        if args.save_ref:
-                            logging.info(f"Video shape: {video.shape}")
-                            save_ref_video(video, i, prompt)
-                            logging.info(f"Saving ref video[{i}]...")
+                    if args.save_ref:
+                        logging.info(f"Video shape: {video.shape}")
+                        save_ref_video(video, i, prompt)
+                        logging.info(f"Saving ref video[{i}]...")
 
     logging.info("Finished.")
 
