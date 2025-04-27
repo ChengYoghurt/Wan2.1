@@ -56,7 +56,7 @@ def save_ref_video(video, i, prompt):
     if not isinstance(video, torch.Tensor):
         # Convert to a PyTorch tensor if it's not already one
         video = torch.tensor(video)
-    ref_video_folder = f"assets/33x480p"
+    ref_video_folder = f"assets/65x480p"
     # Save the video tensor to a .pt file
     os.makedirs(ref_video_folder, exist_ok=True)
     ref_video_path = os.path.join(ref_video_folder, f"{i}.pt")

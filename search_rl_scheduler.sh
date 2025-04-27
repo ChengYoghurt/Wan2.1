@@ -1,10 +1,10 @@
 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
-CUDA_VISIBLE_DEVICES=8 \
+CUDA_VISIBLE_DEVICES=7 \
 python search_ea.py \
---outdir 'outputs/65x480p_step35_search50_cache' \
+--outdir 'outputs/65x480p_step25_search50_cache' \
 --n_samples 6 \
 --num_sample 1000 \
---time_step 35 \
+--time_step 25 \
 --max_epochs 30 \
 --population_num 50 \
 --mutation_num 20 \
