@@ -235,7 +235,9 @@ class WanT2V:
                 timestep = torch.stack(timestep)
 
                 self.model.to(self.device)
-                if ea_timesteps is None or latest_noise_pred is None or t in ea_timesteps:
+                t_ = t.item()
+
+                if ea_timesteps is None or latest_noise_pred is None or (t_ in ea_timesteps):
                     noise_pred_cond = self.model(
                         latent_model_input, t=timestep, **arg_c)[0]
                     noise_pred_uncond = self.model(
