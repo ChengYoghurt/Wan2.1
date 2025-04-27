@@ -511,19 +511,19 @@ class EvolutionSearcher(object):
             mse_loss = F.mse_loss(cand_video, ref_video)
             mse_scores.append(mse_loss.item())
 
-            ## only for test
-            video_filename = f"{prompt}.mp4"  # Format index as 4 digits (e.g., 0000, 0001, etc.)
-            save_dir = "/home/yuge/src/tmp/wan33"
-            save_path = os.path.join(save_dir, video_filename)
+            # ## only for test
+            # video_filename = f"{prompt}.mp4"  # Format index as 4 digits (e.g., 0000, 0001, etc.)
+            # save_dir = "/home/yuge/src/tmp/wan33"
+            # save_path = os.path.join(save_dir, video_filename)
                 
-            logging.info(f"Saving generated video[{i}] to {save_path}")
-            cache_video(
-                tensor=cand_video[None],
-                save_file=save_path,
-                fps=16,
-                nrow=1,
-                normalize=True,
-                value_range=(-1, 1))
+            # logging.info(f"Saving generated video[{i}] to {save_path}")
+            # cache_video(
+            #     tensor=cand_video[None],
+            #     save_file=save_path,
+            #     fps=16,
+            #     nrow=1,
+            #     normalize=True,
+            #     value_range=(-1, 1))
         
         mean_mse = np.mean(mse_scores)
         print("Mean MSE Loss:", mean_mse)
@@ -537,11 +537,7 @@ class EvolutionSearcher(object):
 
         else:
             raise NotImplementedError("not implemented sampler")
-        # Generate videos for each candidate
-        for idx, candidate in enumerate(self.candidates):
-            logging.info(f"Generating video for candidate {idx + 1}/{len(self.candidates)}: {candidate}")
-            self.generate_cand_video(cand=candidate, device=self.device)
-        exit(0)
+
         # TODO: Update the metric evaluation method
         while self.epoch < self.max_epochs:
             logging.info('epoch = {}'.format(self.epoch))
