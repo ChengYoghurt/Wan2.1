@@ -230,9 +230,9 @@ def _parse_args():
         default=False,
         help="Whether to save reference video ckpt.")
     parser.add_argument(
-        "--load_ea_timesteps",
-        action="store_true",
-        default=False,
+        "--ea_timesteps",
+        type=str,
+        default=None,
         help="Whether to use ea timesteps for sampling.")
     
 
@@ -398,12 +398,11 @@ def generate(args):
                         normalize=True,
                         value_range=(-1, 1))
         else:
-            if args.load_ea_timesteps:
-                timesteps_path = "full_timesteps.yaml"
-                with open(timesteps_path, "r") as file:
+            if args.ea_timesteps:
+                with open(args.ea_timesteps, "r") as file:
                     timesteps_data = yaml.safe_load(file)
-                timesteps = timesteps_data.get("sample50", {})  # Returns empty dict if "sample50" doesn't exist
-                timesteps_dict = timesteps.items()
+                timesteps = timesteps_data.get("ea_timesteps", [])  # Returns empty  if "sample50" doesn't exist
+                # timesteps_dict = timesteps.items()
             # == Use your own prompts here == #
             for i, prompt in enumerate(PROMPTS):
             # for i, prompt in enumerate(prompts):
@@ -417,7 +416,7 @@ def generate(args):
                     sampling_steps=args.sample_steps,
                     guide_scale=args.sample_guide_scale,
                     seed=args.base_seed,
-                    ea_timesteps=None, #timesteps_list,
+                    ea_timesteps=timesteps, #timesteps_list,
                     offload_model=args.offload_model)
 
                 if rank == 0:
