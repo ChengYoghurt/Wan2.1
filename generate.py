@@ -18,6 +18,8 @@ from wan.configs import WAN_CONFIGS, SIZE_CONFIGS, MAX_AREA_CONFIGS, SUPPORTED_S
 from wan.utils.prompt_extend import DashScopePromptExpander, QwenPromptExpander
 from wan.utils.utils import cache_video, cache_image, str2bool
 
+from wan.modules.pab_mgr import WanV120PABConfig, set_pab_manager, update_steps
+
 EXAMPLE_PROMPT = {
     "t2v-1.3B": {
         "prompt": "Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.",
@@ -261,6 +263,8 @@ def generate(args):
     local_rank = int(os.getenv("LOCAL_RANK", 0))
     device = local_rank
     _init_logging(rank)
+    # pab
+    update_steps(args.sample_steps)
 
     if args.offload_model is None:
         args.offload_model = False if world_size > 1 else True
@@ -416,7 +420,7 @@ def generate(args):
                     sampling_steps=args.sample_steps,
                     guide_scale=args.sample_guide_scale,
                     seed=args.base_seed,
-                    ea_timesteps=timesteps, #timesteps_list,
+                    ea_timesteps=None, #timesteps_list,
                     offload_model=args.offload_model)
 
                 if rank == 0:
@@ -442,4 +446,8 @@ def generate(args):
 
 if __name__ == "__main__":
     args = _parse_args()
+    # pab
+    pab_config = WanV120PABConfig()
+    set_pab_manager(pab_config)
+
     generate(args)

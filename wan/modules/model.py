@@ -9,6 +9,8 @@ from diffusers.models.modeling_utils import ModelMixin
 
 from .attention import flash_attention
 
+from .pab_mgr import enable_pab, if_broadcast_cross, if_broadcast_spatial
+
 __all__ = ['WanModel']
 
 
@@ -271,6 +273,12 @@ class WanAttentionBlock(nn.Module):
         # modulation
         self.modulation = nn.Parameter(torch.randn(1, 6, dim) / dim**0.5)
 
+        # pab
+        self.spatial_last = None
+        self.spatial_count = 0
+        self.cross_last = None
+        self.cross_count = 0
+
     def forward(
         self,
         x,
@@ -280,6 +288,8 @@ class WanAttentionBlock(nn.Module):
         freqs,
         context,
         context_lens,
+        # pab
+        t,
     ):
         r"""
         Args:
@@ -295,21 +305,36 @@ class WanAttentionBlock(nn.Module):
         assert e[0].dtype == torch.float32
 
         # self-attention
-        y = self.self_attn(
-            self.norm1(x).float() * (1 + e[1]) + e[0], seq_lens, grid_sizes,
-            freqs)
-        with amp.autocast(dtype=torch.float32):
-            x = x + y * e[2]
+        if enable_pab():
+            broadcast_spatial, self.spatial_count = if_broadcast_spatial(t.item(), self.spatial_count)
+        if enable_pab() and broadcast_spatial:
+            x = self.last_spatial
+        else:
+            y = self.self_attn(
+                self.norm1(x).float() * (1 + e[1]) + e[0], seq_lens, grid_sizes,
+                freqs)
+            with amp.autocast(dtype=torch.float32):
+                x = x + y * e[2]
+            if enable_pab():
+                self.last_spatial = x
 
         # cross-attention & ffn function
-        def cross_attn_ffn(x, context, context_lens, e):
-            x = x + self.cross_attn(self.norm3(x), context, context_lens)
+        def cross_attn_ffn(x, context, context_lens, e, t):
+            if enable_pab():
+                broadcast_cross, self.cross_count = if_broadcast_cross(t.item(), self.cross_count)
+            if enable_pab() and broadcast_cross:
+                cross_x = self.last_cross
+            else:
+                cross_x = self.cross_attn(self.norm3(x), context, context_lens) 
+                if enable_pab():
+                    self.last_cross = cross_x
+            x = x + cross_x
             y = self.ffn(self.norm2(x).float() * (1 + e[4]) + e[3])
             with amp.autocast(dtype=torch.float32):
                 x = x + y * e[5]
             return x
-
-        x = cross_attn_ffn(x, context, context_lens, e)
+        
+        x = cross_attn_ffn(x, context, context_lens, e, t) # pab
         return x
 
 
@@ -558,7 +583,9 @@ class WanModel(ModelMixin, ConfigMixin):
             grid_sizes=grid_sizes,
             freqs=self.freqs,
             context=context,
-            context_lens=context_lens)
+            context_lens=context_lens,
+            # pab
+            t=t)
 
         for block in self.blocks:
             x = block(x, **kwargs)
