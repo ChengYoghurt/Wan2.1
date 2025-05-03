@@ -92,10 +92,10 @@ class WanV120PABConfig(PABConfig):
         self,
         spatial_broadcast: bool = True,
         spatial_threshold: list = [603, 976],
-        spatial_range: int = 2,
+        spatial_range: int = 5,
         cross_broadcast: bool = True,
         cross_threshold: list = [603, 976],
-        cross_range: int = 6,
+        cross_range: int = 9,
     ):
         super().__init__(
             spatial_broadcast=spatial_broadcast,

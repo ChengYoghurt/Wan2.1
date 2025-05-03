@@ -408,8 +408,8 @@ def generate(args):
                 timesteps = timesteps_data.get("ea_timesteps", [])  # Returns empty  if "sample50" doesn't exist
                 # timesteps_dict = timesteps.items()
             # == Use your own prompts here == #
-            for i, prompt in enumerate(PROMPTS):
-            # for i, prompt in enumerate(prompts):
+            # for i, prompt in enumerate(PROMPTS):
+            for i, prompt in enumerate(prompts):
                 #for subnode_name, timesteps_list in timesteps_dict:
                 video = wan_t2v.generate(
                     prompt,
