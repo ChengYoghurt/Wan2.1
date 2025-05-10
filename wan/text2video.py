@@ -228,7 +228,7 @@ class WanT2V:
             arg_null = {'context': context_null, 'seq_len': seq_len}
 
             latest_noise_pred = None
-            for _, t in enumerate(tqdm(timesteps)):
+            for idx, t in enumerate(tqdm(timesteps)):
                 latent_model_input = latents
                 timestep = [t]
 
@@ -237,7 +237,7 @@ class WanT2V:
                 self.model.to(self.device)
                 t_ = t.item()
 
-                if ea_timesteps is None or latest_noise_pred is None or (t_ in ea_timesteps):
+                if latest_noise_pred is None or idx % 2 == 1:
                     noise_pred_cond = self.model(
                         latent_model_input, t=timestep, **arg_c)[0]
                     noise_pred_uncond = self.model(
