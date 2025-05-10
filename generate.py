@@ -398,6 +398,7 @@ def generate(args):
                         normalize=True,
                         value_range=(-1, 1))
         else:
+            timesteps=None
             if args.ea_timesteps:
                 with open(args.ea_timesteps, "r") as file:
                     timesteps_data = yaml.safe_load(file)
